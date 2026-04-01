@@ -13,8 +13,7 @@ class Appliance:
         self.is_on = False
 
     def turn_on(self):
-        self.turn_on = True
+        self.is_on = True
 
     def turn_off(self):
-        self.turn_off = False
-        
+        self.is_off = False
