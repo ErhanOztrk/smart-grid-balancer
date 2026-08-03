@@ -1,10 +1,10 @@
-from typing import List
+# from typing import List
 from appliance import Appliance, Priority
 
 class SmartHome:
     def __init__(self, home_id: str):
         self.home_id = home_id
-        self.appliances: List[Appliance] = []
+        self.appliances: list[Appliance] = []
 
     def add_appliance(self, appliance: Appliance):
         self.appliances.append(appliance)
@@ -20,7 +20,17 @@ class SmartHome:
     def react_to_price(self, current_price: float):
         if current_price > 30.0:
             print(f"\n[{self.home_id}] PRICE SPIKE DETECTED ({current_price}p)! Initiating load shedding...")
+            
+            # 1. Create the flag (assume we haven't turned anything off yet)
+            action_taken = False 
+            
             for appliance in self.appliances:
-                    if appliance.priority == Priority.LOW and appliance.is_on:
-                        appliance.turn_off()
-                        print(f"[{self.home_id}] Turned off: {appliance.name} to save money")
+                if appliance.priority == Priority.LOW and appliance.is_on:
+                    appliance.turn_off()
+                    print(f"[{self.home_id}] Turned off: {appliance.name} to save money")
+                    # 2. Update the flag because we successfully shed load!
+                    action_taken = True 
+            
+            # 3. Check the flag after the loop finishes
+            if not action_taken:
+                print(f"[{self.home_id}] No low-priority appliances available to shed. Critical systems maintained.")
