@@ -29,69 +29,75 @@ def run_simulation():
     # --- CRITERIA 2.3: ITERATION (LOOPING) ---
     # We loop through 3 simulated days of grid activity
     for day in range(1, 4):
-        print(f"\n========== STARTING DAY {day} ==========")
+        try:
+            print(f"\n========== STARTING DAY {day} ==========")
         
         # --- TICK 1: MORNING ---
-        print("\n--- MORNING: (Low Demand, High Solar) ---")
-        uk_grid.capacity = 10.0
-        charger.turn_off() # Reset from previous evening
-        oven.turn_off()
-        
-        # Log State to Database
-        db.log_telemetry(
-            demand=uk_grid.get_total_demand(),
-            capacity=uk_grid.capacity,
-            frequency=uk_grid.get_current_frequency(),
-            price=uk_grid.get_price_signal(),
-            status="STABLE"
-        )
-        time.sleep(3) # Pause for 3 seconds so dashboard can update
-
-        # --- TICK 2: EVENING PEAK ---
-        print("\n--- EVENING PEAK (The Duck Curve strikes) ---")
-        uk_grid.capacity = 5.0
-        charger.turn_on()
-        oven.turn_on()
-
-        current_freq = uk_grid.get_current_frequency()
-        current_price = uk_grid.get_price_signal()
-
-        # Log Crisis State to Database
-        db.log_telemetry(
-            demand=uk_grid.get_total_demand(),
-            capacity=uk_grid.capacity,
-            frequency=current_freq,
-            price=current_price,
-            status="CRITICAL SPIKE" if current_price > 30.0 else "WARNING"
-        )
-        time.sleep(3)
-
-        # --- TICK 3: AUTONOMOUS INTERVENTION ---
-        print("\n--- AUTONOMOUS INTERVENTION ---")
-        my_home.react_to_price(current_price)
-        
-        # Audit Log: Record the automated mitigation action
-        if current_price > 30.0:
-            db.log_risk_action(
-                home_id=my_home.home_id,
-                appliance_name=charger.name,
-                action="SHED_LOAD",
-                savings=current_price * charger.power_draw, 
-                trigger_price=current_price
+            print("\n--- MORNING: (Low Demand, High Solar) ---")
+            uk_grid.capacity = 10.0
+            charger.turn_off() # Reset from previous evening
+            oven.turn_off()
+            
+            # Log State to Database
+            db.log_telemetry(
+                demand=uk_grid.get_total_demand(),
+                capacity=uk_grid.capacity,
+                frequency=uk_grid.get_current_frequency(),
+                price=uk_grid.get_price_signal(),
+                status="STABLE"
             )
-        time.sleep(3)
+            time.sleep(3) # Pause for 3 seconds so dashboard can update
 
-        # --- TICK 4: STABILIZATION ---
-        print("\n--- TICK 4: STABILIZATION ---")
-        # Log Recovered State to Database
-        db.log_telemetry(
-            demand=uk_grid.get_total_demand(),
-            capacity=uk_grid.capacity,
-            frequency=uk_grid.get_current_frequency(),
-            price=uk_grid.get_price_signal(),
-            status="STABLE"
-        )
-        time.sleep(3)
+            # --- TICK 2: EVENING PEAK ---
+            print("\n--- EVENING PEAK (The Duck Curve strikes) ---")
+            uk_grid.capacity = 5.0
+            charger.turn_on()
+            oven.turn_on()
+
+            current_freq = uk_grid.get_current_frequency()
+            current_price = uk_grid.get_price_signal()
+
+            # Log Crisis State to Database
+            db.log_telemetry(
+                demand=uk_grid.get_total_demand(),
+                capacity=uk_grid.capacity,
+                frequency=current_freq,
+                price=current_price,
+                status="CRITICAL SPIKE" if current_price > 30.0 else "WARNING"
+            )
+            time.sleep(3)
+
+            # --- TICK 3: AUTONOMOUS INTERVENTION ---
+            print("\n--- AUTONOMOUS INTERVENTION ---")
+            my_home.react_to_price(current_price)
+            
+            # Audit Log: Record the automated mitigation action
+            if current_price > 30.0:
+                db.log_risk_action(
+                    home_id=my_home.home_id,
+                    appliance_name=charger.name,
+                    action="SHED_LOAD",
+                    savings=current_price * charger.power_draw, 
+                    trigger_price=current_price
+                )
+            time.sleep(3)
+
+            # --- TICK 4: STABILIZATION ---
+            print("\n--- TICK 4: STABILIZATION ---")
+            # Log Recovered State to Database
+            db.log_telemetry(
+                demand=uk_grid.get_total_demand(),
+                capacity=uk_grid.capacity,
+                frequency=uk_grid.get_current_frequency(),
+                price=uk_grid.get_price_signal(),
+                status="STABLE"
+            )
+            time.sleep(3)
+        
+        except Exception as e:
+            print(f"⚠️ CRITICAL ERROR ON DAY {day}: {e}. Recovering...")
+            time.sleep(3)
+            continue
 
     db.close()
     print("\n✅ 3-Day Simulation complete. All data securely logged to PostgreSQL.")

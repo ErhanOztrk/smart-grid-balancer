@@ -1,3 +1,4 @@
+from sqlalchemy import create_engine
 import pandas as pd
 import psycopg2
 import plotly.graph_objects as go
@@ -12,15 +13,8 @@ st.set_page_config(page_title="Energy Risk Engine", page_icon="⚡", layout="wid
 @st.cache_data(ttl=5) # Refreshes data every 5 seconds
 def fetch_data(query):
     try:
-        conn = psycopg2.connect(
-            host="127.0.0.1",
-            database="postgres",
-            user="postgres",
-            password="fintech", 
-            port="5432"
-        )
-        df = pd.read_sql(query, conn)
-        conn.close()
+        engine = create_engine("postgresql+psycopg2://postgres:fintech@127.0.0.1:5432/postgres")
+        df = pd.read_sql(query, engine)
         return df
     except Exception as e:
         st.error(f"Database connection failed: {e}")
