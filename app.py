@@ -59,38 +59,40 @@ with st.sidebar:
     # NEW LOGIC: Wire up the button to write to the database
     if trigger_action:
         try:
-            # Connect to PostgreSQL using your existing parameters
-            conn = psycopg2.connect(
+            with psycopg2.connect(
                 host="127.0.0.1",
                 database="postgres",
                 user="postgres",
-                password="fintech", 
+                password="fintech",
                 port="5432"
-            )
-            cursor = conn.cursor()
-            
-            # Insert a manual override event into the audit log
-            query = """
-            INSERT INTO risk_mitigation_log (home_id, appliance_name, action_taken, money_saved_estimate, trigger_price_p_kwh)
-            VALUES (%s, %s, %s, %s, %s)
-            """
-            cursor.execute(query, ("SYSTEM_OVERRIDE", "All Non-Critical", "EMERGENCY_SHUTDOWN", 0.0, risk_threshold))
-            conn.commit()
-            
-            cursor.close()
-            conn.close()
-            
-            # Clear the cache so Streamlit fetches the new data instantly
+            ) as conn:
+                with conn.cursor() as cursor:
+                    query = """
+                     INSERT INTO risk_mitigation_log 
+                    (home_id, appliance_name, action_taken, money_saved_estimate, trigger_price_p_kwh)
+                VALUES (%s, %s, %s, %s, %s)
+                """
+                cursor.execute(
+                    query,
+                    (
+                        "SYSTEM_OVERRIDE",
+                        "All Non-Critical",
+                        "EMERGENCY_SHUTDOWN",
+                        0.0,
+                        risk_threshold,
+                    ),
+                )
+            # No need to explicitly close cursor/conn here.
+
             fetch_data.clear()
             st.success("Emergency Stop-Loss Executed!")
-            st.rerun() # Instantly refresh the UI to show the new row
-            
+            st.rerun()
+
         except Exception as e:
             st.error(f"Failed to execute emergency override: {e}")
-
 # --- TOP METRICS ROW ---
 if not telemetry_df.empty:
-    latest_data = telemetry_df.iloc[-1] # Get the most recent row
+    latest_data = telemetry_df.iloc[-1] # Get the most recent row (Graceful Degradation; If no data, we skip this section.)
     
     # --- AI PREDICTIVE LOGIC ---
     # Calculate demand trend over the last 3 ticks to forecast risk
