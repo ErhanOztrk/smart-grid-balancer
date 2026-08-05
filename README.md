@@ -32,9 +32,10 @@ Compliance Auditing: The exact financial impact and timestamp of the automated a
 
 1. Initialize the Database Infrastructure
 
-Ensure Docker Desktop is running, then spin up the isolated PostgreSQL container:
-
-docker run --name smartgrid-db -e POSTGRES_PASSWORD=fintech -p 5432:5432 -d postgres
+Ensure PostgreSQL is installed and running on your local machine. The application expects the default postgres database to be available with the following local credentials:
+User: postgres
+Password: fintech
+Port: 5432
 
 
 2. Install Dependencies
